@@ -1,0 +1,37 @@
+spring:
+  h2:
+    console:
+      enabled: true
+  jpa:
+    open-in-view: false
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 2KB
+      max-file-size: 5MB
+      max-request-size: 10MB
+file:
+  upload:
+    acceptableExtensions: jpg,png,jpeg
+
+minio:
+  url: http://127.0.0.1:9000/
+  bucket: user
+  access-key: test
+  secret-key: test1234
+  folder: profpic/
+
+application:
+  swagger:
+    title: MinIo Photo API
+    description: Spring Boot photo uploading with MinIo file storage.
+    version: 0.0.1
+    cors:
+      allowedOrigins: "*"
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowedHeaders: "*"
