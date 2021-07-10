@@ -8,24 +8,25 @@ spring:
     multipart:
       enabled: true
       file-size-threshold: 2KB
-      max-file-size: 5MB
-      max-request-size: 10MB
+      max-file-size: 500MB
+      max-request-size: 1000MB
 file:
   upload:
-    acceptableExtensions: jpg,png,jpeg
+    acceptableVideoExtensions: mp4,mov,avi,wmv
+    acceptableImageExtensions: jpg,png,jpeg
 
 minio:
   url: http://127.0.0.1:9000/
   bucket: user
   access-key: test
   secret-key: test1234
-  folder: profpic/
-
+  image-folder: profpic/
+  video-folder: video/
 application:
   swagger:
     title: MinIo Photo API
     description: Spring Boot photo uploading with MinIo file storage.
-    version: 0.0.1
+    version: 0.0.2
     cors:
       allowedOrigins: "*"
       allowedMethods:

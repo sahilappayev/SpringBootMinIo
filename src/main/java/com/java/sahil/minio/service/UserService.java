@@ -19,15 +19,20 @@ public interface UserService {
 
     UserResponseDto delete(Long id);
 
-    String uploadPhoto(MultipartFile file, Long id);
+    String uploadImage(MultipartFile file, Long id);
 
-    String updatePhoto(MultipartFile file, Long id);
+    String updateImage(MultipartFile file, Long id);
 
-    void deleteUserPhoto(Long id);
+    void deleteUserImage(Long id);
 
-    void deletePhoto(String fileName);
+    void deleteFile(String fileName, String folder);
 
-    byte[] getPhoto(String fileName);
+    byte[] getFile(String fileName, String folder);
 
+    String uploadVideo(MultipartFile file, Long id);
+
+    String updateVideo(MultipartFile file, Long id);
+
+    void deleteUserVideo(Long id);
 
 }

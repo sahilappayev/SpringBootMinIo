@@ -33,10 +33,12 @@ public class FileServiceImpl implements FileService {
     private final FileUtil fileUtil;
     @Value("${minio.bucket}")
     private String bucketName;
+    private final String VIDEO_MEDIA_TYPE = "video";
+    private final String IMAGE_MEDIA_TYPE = "image";
 
     @SneakyThrows
     @Override
-    public byte[] getPhoto(String fileName, String folder) {
+    public byte[] getFile(String fileName, String folder) {
         String objectName = folder + fileName;
         GetObjectArgs minioRequest = GetObjectArgs.builder().bucket(bucketName).object(objectName).build();
         byte[] bytes = null;
@@ -53,8 +55,8 @@ public class FileServiceImpl implements FileService {
 
     @SneakyThrows
     @Override
-    public String uploadPhoto(MultipartFile file, String folder) {
-        String fileExtension = fileUtil.getFileExtensionIfAcceptable(file);
+    public String uploadImage(MultipartFile file, String folder) {
+        String fileExtension = fileUtil.getFileExtensionIfAcceptable(file, IMAGE_MEDIA_TYPE);
         String fileName = fileUtil.generateUniqueName(fileExtension);
         String objectName = folder + fileName;
 
@@ -86,8 +88,22 @@ public class FileServiceImpl implements FileService {
 
     @SneakyThrows
     @Override
-    public void deletePhoto(String fileName, String folder) {
+    public void deleteFile(String fileName, String folder) {
         String objectName = folder + fileName;
         minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucketName).object(objectName).build());
     }
+
+    @SneakyThrows
+    @Override
+    public String uploadVideo(MultipartFile file, String folder) {
+        String fileExtension = fileUtil.getFileExtensionIfAcceptable(file, VIDEO_MEDIA_TYPE);
+        String fileName = fileUtil.generateUniqueName(fileExtension);
+        String objectName = folder + fileName;
+        minioClient.putObject(PutObjectArgs.builder().bucket(bucketName).object(objectName).stream(
+                file.getInputStream(), file.getInputStream().available(), -1)
+                .contentType(file.getContentType())
+                .build());
+        return fileName;
+    }
+
 }

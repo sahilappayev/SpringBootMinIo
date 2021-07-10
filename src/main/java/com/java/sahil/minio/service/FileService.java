@@ -4,10 +4,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface FileService {
 
-    byte[] getPhoto(String fileName, String folder);
+    byte[] getFile(String fileName, String folder);
 
-    String uploadPhoto(MultipartFile file, String folder);
+    String uploadImage(MultipartFile file, String folder);
 
-    void deletePhoto(String fileName, String folder);
+    void deleteFile(String fileName, String folder);
+
+    String uploadVideo(MultipartFile file, String folder);
 
 }

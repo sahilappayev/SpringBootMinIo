@@ -30,8 +30,10 @@ public class UserServiceImpl implements UserService {
     private final UserRepo userRepo;
     private final FileServiceImpl fileServiceImpl;
     private final UserMapper userMapper;
-    @Value("${minio.folder}")
-    private String folder;
+    @Value("${minio.image-folder}")
+    private String imageFolder;
+    @Value("${minio.video-folder}")
+    private String videoFolder;
 
     @Override
     public UserResponseDto create(UserRequestDto userRequestDto) {
@@ -86,7 +88,10 @@ public class UserServiceImpl implements UserService {
             throw new EntityNotFoundException(User.class, id);
         });
         if (user.getPhoto() != null) {
-            deletePhoto(user.getPhoto());
+            deleteFile(user.getPhoto(), imageFolder);
+        }
+        if (user.getVideo() != null) {
+            deleteFile(user.getVideo(), videoFolder);
         }
         userRepo.delete(user);
         UserResponseDto userResponseDto = userMapper.toUserDto(user);
@@ -99,14 +104,74 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     @Transactional
-    public String uploadPhoto(MultipartFile file, Long id) {
-        log.info("uploadFile to User started with, {}",
+    public String uploadImage(MultipartFile file, Long id) {
+        log.info("uploadImage to User started with, {}",
                 kv("partnerId", id));
         User user = userRepo.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(User.class, id));
         if (user.getPhoto() == null) {
-            String fileName = fileServiceImpl.uploadPhoto(file, folder);
+            String fileName = fileServiceImpl.uploadImage(file, imageFolder);
             user.setPhoto(fileName);
+            userRepo.save(user);
+            log.info("uploadImage to User completed successfully with {}",
+                    kv("partnerId", id));
+            return fileName;
+        }
+        throw new FileCantUploadException(file.getOriginalFilename());
+    }
+
+    @Override
+    @Transactional
+    public String updateImage(MultipartFile file, Long id) {
+        log.info("updateImage to User started with, {}",
+                kv("partnerId", id));
+        User user = userRepo.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(User.class, id));
+        deleteFile(user.getPhoto(), imageFolder);
+        String fileName = fileServiceImpl.uploadImage(file, imageFolder);
+        user.setPhoto(fileName);
+        userRepo.save(user);
+        log.info("updateImage to User completed successfully with {}",
+                kv("partnerId", user));
+        return fileName;
+    }
+
+    @Override
+    public void deleteUserImage(Long id) {
+        log.info("deleteUserImage started from User with {}", kv("id", id));
+        User user = userRepo.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(User.class, id));
+        if (user.getPhoto() != null) {
+            fileServiceImpl.deleteFile(user.getPhoto(), imageFolder);
+            user.setPhoto(null);
+            userRepo.save(user);
+        }
+        log.info("deleteUserImage completed successfully from User with {} ", kv("id", id));
+    }
+
+    @Override
+    @Transactional
+    public void deleteFile(String fileName, String folder) {
+        log.info("deleteFile started from User with {}", kv("fileName", fileName));
+        fileServiceImpl.deleteFile(fileName, folder);
+        log.info("deleteFile completed successfully from User with {} ", kv("fileName", fileName));
+    }
+
+    @Override
+    public byte[] getFile(String fileName, String folder) {
+        log.info("getFile started with {}", kv("fileName", fileName));
+        return fileServiceImpl.getFile(fileName, folder);
+    }
+
+    @Override
+    public String uploadVideo(MultipartFile file, Long id) {
+        log.info("uploadVideo to User started with, {}",
+                kv("partnerId", id));
+        User user = userRepo.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(User.class, id));
+        if (user.getPhoto() == null) {
+            String fileName = fileServiceImpl.uploadVideo(file, videoFolder);
+            user.setVideo(fileName);
             userRepo.save(user);
             log.info("uploadFile to User completed successfully with {}",
                     kv("partnerId", id));
@@ -116,45 +181,30 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
-    public String updatePhoto(MultipartFile file, Long id) {
-        log.info("updateFile to User started with, {}",
+    public String updateVideo(MultipartFile file, Long id) {
+        log.info("updateVideo to User started with, {}",
                 kv("partnerId", id));
         User user = userRepo.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(User.class, id));
-        deletePhoto(user.getPhoto());
-        String fileName = fileServiceImpl.uploadPhoto(file, folder);
-        user.setPhoto(fileName);
+        deleteFile(user.getVideo(), videoFolder);
+        String fileName = fileServiceImpl.uploadVideo(file, videoFolder);
+        user.setVideo(fileName);
         userRepo.save(user);
-        log.info("updateFile to User completed successfully with {}",
+        log.info("updateVideo to User completed successfully with {}",
                 kv("partnerId", user));
         return fileName;
     }
 
     @Override
-    public void deleteUserPhoto(Long id) {
-        log.info("deleteUserPhoto started from User with {}", kv("id", id));
+    public void deleteUserVideo(Long id) {
+        log.info("deleteUserVideo started from User with {}", kv("id", id));
         User user = userRepo.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(User.class, id));
         if (user.getPhoto() != null) {
-            fileServiceImpl.deletePhoto(user.getPhoto(), folder);
-            user.setPhoto(null);
+            fileServiceImpl.deleteFile(user.getVideo(), videoFolder);
+            user.setVideo(null);
             userRepo.save(user);
         }
-        log.info("deleteUserPhoto completed successfully from User with {} ", kv("id", id));
-    }
-
-    @Override
-    @Transactional
-    public void deletePhoto(String fileName) {
-        log.info("deleteFile started from User with {}", kv("fileName", fileName));
-        fileServiceImpl.deletePhoto(fileName, folder);
-        log.info("deleteFile completed successfully from User with {} ", kv("fileName", fileName));
-    }
-
-    @Override
-    public byte[] getPhoto(String fileName) {
-        log.info("getPhoto started with {}", kv("fileName", fileName));
-        return fileServiceImpl.getPhoto(fileName, folder);
+        log.info("deleteUserVideo completed successfully from User with {} ", kv("id", id));
     }
 }

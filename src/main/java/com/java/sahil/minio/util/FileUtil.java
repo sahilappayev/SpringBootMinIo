@@ -1,7 +1,6 @@
 package com.java.sahil.minio.util;
 
 import com.java.sahil.minio.error.ExtensionNotAcceptableException;
-import io.minio.MinioClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,31 +12,31 @@ import java.util.Date;
 @Service
 @RequiredArgsConstructor
 public class FileUtil {
-    private final MinioClient minioClient;
-    @Value("${file.upload.acceptableExtensions}")
-    private String[] acceptableExtensions;
+    @Value("${file.upload.acceptableVideoExtensions}")
+    private String[] acceptableVideoExtensions;
+    @Value("${file.upload.acceptableImageExtensions}")
+    private String[] acceptableImageExtensions;
 
-    private boolean isExtensionAcceptable(String extension) {
-        for (String s : acceptableExtensions) {
-            if (s.equalsIgnoreCase(extension)) {
-                return true;
+    private boolean isExtensionAcceptable(String extension, String mediaType) {
+        if (mediaType.equals("image")){
+            for (String s : acceptableImageExtensions) {
+                if (s.equalsIgnoreCase(extension)) {
+                    return true;
+                }
+            }
+        }else if (mediaType.equals("video")){
+            for (String s : acceptableVideoExtensions) {
+                if (s.equalsIgnoreCase(extension)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    public String checkFileExtensionIsAcceptable(String contentType) {
-        String extension = contentType.split("[/]")[1];
-        if (isExtensionAcceptable(extension)) {
-            return extension;
-        } else {
-            throw new ExtensionNotAcceptableException(extension);
-        }
-    }
-
-    public String getFileExtensionIfAcceptable(@NotNull MultipartFile file) {
+    public String getFileExtensionIfAcceptable(@NotNull MultipartFile file, String mediaType) {
         String extension = file.getContentType().split("[/]")[1];
-        if (isExtensionAcceptable(extension)) {
+        if (isExtensionAcceptable(extension, mediaType)) {
             return extension;
         } else {
             throw new ExtensionNotAcceptableException(extension);

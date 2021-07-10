@@ -8,3 +8,15 @@ services:
       MINIO_ACCESS_KEY: test
       MINIO_SECRET_KEY: test1234
     command: server /data
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add myminio http://minio:9000 test test1234;
+      /usr/bin/mc rm -r --force myminio/user;
+      /usr/bin/mc mb myminio/user;
+      /usr/bin/mc policy download myminio/user;
+      exit 0;
+      "

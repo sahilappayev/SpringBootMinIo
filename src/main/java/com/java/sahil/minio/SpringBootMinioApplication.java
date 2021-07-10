@@ -9,6 +9,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 
 @SpringBootApplication
+//@OpenAPIDefinition(info = @Info(title = "SpringBoot - MinIO", version = "1.0",
+//        description = "Spring Boot App With MinIO File Storage Server"))
 public class SpringBootMinioApplication {
 
     public static void main(String[] args) {
