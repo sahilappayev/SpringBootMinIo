@@ -4,5 +4,4 @@
 
 * Before starting app you have to run Maven Docker composeUp stage to create MinIo server which
 you can access using following url: http://127.0.0.1:9000/ (secret key: test, access key: test1234)
-
-
+  
