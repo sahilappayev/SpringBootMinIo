@@ -25,7 +25,7 @@ minio:
 application:
   swagger:
     title: MinIo Photo API
-    description: Spring Boot photo uploading with MinIo file storage.
+    description: Spring Boot file uploading with MinIo file storage.
     version: 0.0.2
     cors:
       allowedOrigins: "*"

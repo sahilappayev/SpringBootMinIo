@@ -1,5 +1,6 @@
 package com.java.sahil.minio.controller;
 
+import com.java.sahil.minio.dto.FileDto;
 import com.java.sahil.minio.dto.PageableResponseDto;
 import com.java.sahil.minio.dto.UserRequestDto;
 import com.java.sahil.minio.dto.UserResponseDto;
@@ -86,16 +87,16 @@ public class UserController {
     /**
      * FILE URIs
      */
-    @PostMapping(value = "/image/{id}", produces = MediaType.TEXT_PLAIN_VALUE)
+    @PostMapping(value = "/image/{id}")
     @ApiOperation(value = "Add User Image")
-    public ResponseEntity<String> createImage(@PathVariable Long id, @Valid @RequestParam MultipartFile file) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.uploadImage(file, id));
+    public ResponseEntity<FileDto> createImage(@PathVariable Long id, @Valid @RequestParam MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new FileDto(userService.uploadImage(file, id)));
     }
 
-    @PutMapping(value = "/image/{id}", produces = MediaType.TEXT_PLAIN_VALUE)
+    @PutMapping(value = "/image/{id}")
     @ApiOperation(value = "Update User Image")
-    public ResponseEntity<String> updateImage(@PathVariable Long id, @Valid @RequestParam MultipartFile file) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.updateImage(file, id));
+    public ResponseEntity<FileDto> updateImage(@PathVariable Long id, @Valid @RequestParam MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new FileDto(userService.updateImage(file, id)));
     }
 
     @GetMapping(value = "/image/{fileName}", produces = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE})
@@ -111,18 +112,16 @@ public class UserController {
         userService.deleteUserImage(id);
     }
 
-    @PostMapping(value = "/video/{id}", produces = MediaType.TEXT_PLAIN_VALUE,
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/video/{id}")
     @ApiOperation(value = "Add User Video")
-    public ResponseEntity<String> createVideo(@PathVariable Long id, @Valid @RequestParam MultipartFile file) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.uploadVideo(file, id));
+    public ResponseEntity<FileDto> createVideo(@PathVariable Long id, @Valid @RequestParam MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new FileDto(userService.uploadVideo(file, id)));
     }
 
-    @PutMapping(value = "/video/{id}", produces = MediaType.TEXT_PLAIN_VALUE,
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/video/{id}")
     @ApiOperation(value = "Update User Video")
-    public ResponseEntity<String> updateVideo(@PathVariable Long id, @Valid @RequestParam MultipartFile file) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.updateVideo(file, id));
+    public ResponseEntity<FileDto> updateVideo(@PathVariable Long id, @Valid @RequestParam MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new FileDto(userService.updateVideo(file, id)));
     }
 
     @SneakyThrows
