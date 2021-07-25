@@ -4,6 +4,7 @@ spring:
       enabled: true
   jpa:
     open-in-view: false
+    defer-datasource-initialization: true
   servlet:
     multipart:
       enabled: true
@@ -27,12 +28,3 @@ application:
     title: MinIo Photo API
     description: Spring Boot file uploading with MinIo file storage.
     version: 0.0.2
-    cors:
-      allowedOrigins: "*"
-      allowedMethods:
-        - GET
-        - POST
-        - PUT
-        - DELETE
-        - OPTIONS
-      allowedHeaders: "*"

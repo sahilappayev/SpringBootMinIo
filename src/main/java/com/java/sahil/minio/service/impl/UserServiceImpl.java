@@ -169,7 +169,7 @@ public class UserServiceImpl implements UserService {
                 kv("partnerId", id));
         User user = userRepo.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(User.class, id));
-        if (user.getPhoto() == null) {
+        if (user.getVideo() == null) {
             String fileName = fileServiceImpl.uploadVideo(file, videoFolder);
             user.setVideo(fileName);
             userRepo.save(user);
