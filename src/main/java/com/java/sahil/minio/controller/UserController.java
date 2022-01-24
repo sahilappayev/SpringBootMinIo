@@ -44,6 +44,8 @@ public class UserController {
     private String imageFolder;
     @Value("${minio.video-folder}")
     private String videoFolder;
+    @Value("${minio.resume-folder}")
+    private String resumeFolder;
 
     @GetMapping
     @ApiOperation(value = "Get User List as Pageable")
@@ -99,6 +101,12 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new FileDto(userService.updateImage(file, id)));
     }
 
+    @PutMapping(value = "/image/contract/{dummyPin}")
+    @ApiOperation(value = "Update User Image")
+    public ResponseEntity<FileDto> uploadContractByPin(@PathVariable String dummyPin) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new FileDto(userService.uploadContractByPin(dummyPin)));
+    }
+
     @GetMapping(value = "/image/{fileName}", produces = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE})
     @ApiOperation(value = "Get User Image")
     @ResponseStatus(HttpStatus.OK)
@@ -145,6 +153,26 @@ public class UserController {
     @ApiOperation(value = "Delete User Video")
     public void deleteUserVideo(@PathVariable("id") Long id) {
         userService.deleteUserVideo(id);
+    }
+
+
+    @PostMapping("/resume/{id}")
+    @ApiOperation(value = "Add User Pdf Resume")
+    public ResponseEntity<FileDto> uploadResume(@PathVariable Long id, @Valid @RequestParam MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new FileDto(userService.uploadResume(file, id)));
+    }
+
+    @PutMapping(value = "/resume/{id}")
+    @ApiOperation(value = "Update User Pdf Resume")
+    public ResponseEntity<FileDto> updateResume(@PathVariable Long id, @Valid @RequestParam MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(new FileDto(userService.updateResume(file, id)));
+    }
+
+    @GetMapping(value = "/resume/{fileName}", produces = {MediaType.APPLICATION_PDF_VALUE})
+    @ApiOperation(value = "Get User Resume")
+    @ResponseStatus(HttpStatus.OK)
+    public byte[] getResume(@PathVariable("fileName") String fileName) {
+        return userService.getFile(fileName, resumeFolder);
     }
 
 }

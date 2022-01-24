@@ -16,12 +16,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static net.logstash.logback.argument.StructuredArguments.kv;
 
@@ -35,6 +36,7 @@ public class FileServiceImpl implements FileService {
     private String bucketName;
     private final String VIDEO_MEDIA_TYPE = "video";
     private final String IMAGE_MEDIA_TYPE = "image";
+    private final String PDF_MEDIA_TYPE = "pdf";
 
     @SneakyThrows
     @Override
@@ -55,36 +57,26 @@ public class FileServiceImpl implements FileService {
 
     @SneakyThrows
     @Override
-    public String uploadImage(MultipartFile file, String folder) {
+    public String uploadImage(MultipartFile file, String folder, boolean isResize) {
         String fileExtension = fileUtil.getFileExtensionIfAcceptable(file, IMAGE_MEDIA_TYPE);
         String fileName = fileUtil.generateUniqueName(fileExtension);
         String objectName = folder + fileName;
+        InputStream inputStream = file.getInputStream();
 
-        BufferedImage image = ImageIO.read(file.getInputStream());
-        int width = image.getWidth();
-        int height = image.getHeight();
-        if (width > 2560 && height > 1080) {
-            width = width / 3;
-            height = height / 3;
+        if (isResize){
+            BufferedImage image = ImageIO.read(inputStream);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ImageIO.write(fileUtil.resizeImage(image, image.getWidth(), image.getHeight()), fileExtension, byteArrayOutputStream);
+            inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
         }
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ImageIO.write(resizeImage(image, width, height), fileExtension, byteArrayOutputStream);
-        InputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-
         minioClient.putObject(PutObjectArgs.builder().bucket(bucketName).object(objectName).stream(
-                inputStream, inputStream.available(), -1)
+                        inputStream, inputStream.available(), -1)
                 .contentType(file.getContentType())
                 .build());
         return fileName;
     }
 
-    private BufferedImage resizeImage(BufferedImage originalImage, int targetWidth, int targetHeight) throws IOException {
-        Image resultingImage = originalImage.getScaledInstance(targetWidth, targetHeight, Image.SCALE_DEFAULT);
-        BufferedImage outputImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
-        outputImage.getGraphics().drawImage(resultingImage, 0, 0, null);
-        return outputImage;
-    }
 
     @SneakyThrows
     @Override
@@ -100,8 +92,38 @@ public class FileServiceImpl implements FileService {
         String fileName = fileUtil.generateUniqueName(fileExtension);
         String objectName = folder + fileName;
         minioClient.putObject(PutObjectArgs.builder().bucket(bucketName).object(objectName).stream(
-                file.getInputStream(), file.getInputStream().available(), -1)
+                        file.getInputStream(), file.getInputStream().available(), -1)
                 .contentType(file.getContentType())
+                .build());
+        return fileName;
+    }
+
+    @SneakyThrows
+    @Override
+    public String uploadPdf(MultipartFile file, String folder) {
+        String fileExtension = fileUtil.getFileExtensionIfAcceptable(file, PDF_MEDIA_TYPE);
+        String fileName = fileUtil.generateUniqueName(fileExtension);
+        String objectName = folder + fileName;
+        InputStream inputStream = file.getInputStream();
+        minioClient.putObject(PutObjectArgs.builder().bucket(bucketName).object(objectName).stream(
+                        inputStream, inputStream.available(), -1)
+                .contentType(file.getContentType())
+                .build());
+        return fileName;
+    }
+
+    @SneakyThrows
+    public String uploadInputStreamImage(InputStream file, String folder) {
+        String fileName = fileUtil.generateUniqueName(fileUtil.getFileExtensionFromInputStream(file));
+        String fileExtension = fileUtil.getFileExtensionIfAcceptable(fileName, IMAGE_MEDIA_TYPE);
+        Path path = new File(fileName).toPath();
+        String mimeType = Files.probeContentType(path);
+        fileName = fileUtil.generateUniqueName(fileExtension);
+        String objectName = folder + fileName;
+
+        minioClient.putObject(PutObjectArgs.builder().bucket(bucketName).object(objectName).stream(
+                        file, file.available(), -1)
+                .contentType(mimeType)
                 .build());
         return fileName;
     }

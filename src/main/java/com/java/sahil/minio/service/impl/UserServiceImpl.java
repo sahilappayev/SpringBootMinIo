@@ -9,8 +9,11 @@ import com.java.sahil.minio.error.FileCantUploadException;
 import com.java.sahil.minio.mapper.UserMapper;
 import com.java.sahil.minio.repo.UserRepo;
 import com.java.sahil.minio.service.UserService;
+import com.java.sahil.minio.util.FileUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,8 +21,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.List;
 
+import static com.java.sahil.minio.client.DummyClient.getBase64Contract;
+import static com.java.sahil.minio.client.DummyClient.getBase64Signature;
 import static net.logstash.logback.argument.StructuredArguments.kv;
 
 @Service
@@ -30,10 +43,13 @@ public class UserServiceImpl implements UserService {
     private final UserRepo userRepo;
     private final FileServiceImpl fileServiceImpl;
     private final UserMapper userMapper;
+    private final FileUtil fileUtil;
     @Value("${minio.image-folder}")
     private String imageFolder;
     @Value("${minio.video-folder}")
     private String videoFolder;
+    @Value("${minio.resume-folder}")
+    private String resumeFolder;
 
     @Override
     public UserResponseDto create(UserRequestDto userRequestDto) {
@@ -110,7 +126,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepo.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(User.class, id));
         if (user.getPhoto() == null) {
-            String fileName = fileServiceImpl.uploadImage(file, imageFolder);
+            String fileName = fileServiceImpl.uploadImage(file, imageFolder, true);
             user.setPhoto(fileName);
             userRepo.save(user);
             log.info("uploadImage to User completed successfully with {}",
@@ -128,7 +144,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepo.findById(id).orElseThrow(
                 () -> new EntityNotFoundException(User.class, id));
         deleteFile(user.getPhoto(), imageFolder);
-        String fileName = fileServiceImpl.uploadImage(file, imageFolder);
+        String fileName = fileServiceImpl.uploadImage(file, imageFolder, true);
         user.setPhoto(fileName);
         userRepo.save(user);
         log.info("updateImage to User completed successfully with {}",
@@ -207,4 +223,75 @@ public class UserServiceImpl implements UserService {
         }
         log.info("deleteUserVideo completed successfully from User with {} ", kv("id", id));
     }
+
+    @SneakyThrows
+    @Override
+    public String uploadContractByPin(String dummyPin) {
+        User user = userRepo.findById(1L).get();
+        BufferedImage contract = base64ToBufferedImage(getBase64Contract());
+        BufferedImage signature = base64ToBufferedImage(getBase64Signature());
+        signature = fileUtil.resizeImage(signature, 70, 25);
+
+        BufferedImage combinedImage = new BufferedImage(contract.getWidth(), contract.getHeight(),
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = combinedImage.createGraphics();
+        g.drawImage(contract, 0, 0, null);
+        g.drawImage(signature, 90,
+                (contract.getHeight() - 40 - signature.getHeight()), null);
+        g.setPaint(Color.BLACK);
+        g.setFont(new Font("Serif", Font.ITALIC, 14));
+        g.drawString("Sahil Appayev", 60, 82);
+        g.dispose();
+
+        log.info("Contract size: {} {}", combinedImage.getWidth(), combinedImage.getHeight());
+        log.info("Signature size: {} {}", signature.getWidth(), signature.getHeight());
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ImageIO.write(combinedImage, "PNG", byteArrayOutputStream);
+        byte[] bytes = byteArrayOutputStream.toByteArray();
+        InputStream file = new ByteArrayInputStream(bytes);
+        String fileName = fileServiceImpl.uploadInputStreamImage(file, imageFolder);
+        user.setPhoto(fileName);
+        userRepo.save(user);
+        return fileName;
+    }
+
+    @SneakyThrows
+    private BufferedImage base64ToBufferedImage(String base64) {
+        base64 = base64.split("[,]")[1];
+        byte[] bytes = Base64.decodeBase64(base64);
+        return ImageIO.read(new ByteArrayInputStream(bytes));
+    }
+
+    public String uploadResume(MultipartFile file, Long id) {
+        log.info("uploadResume to User started with, {}",
+                kv("id", id));
+        User user = userRepo.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(User.class, id));
+        if (user.getVideo() == null) {
+            String fileName = fileServiceImpl.uploadPdf(file, resumeFolder);
+            user.setResume(fileName);
+            userRepo.save(user);
+            log.info("uploadResume to User completed successfully with {}",
+                    kv("id", id));
+            return fileName;
+        }
+        throw new FileCantUploadException(file.getOriginalFilename());
+    }
+
+    @Override
+    public String updateResume(MultipartFile file, Long id) {
+        log.info("updateResume to User started with, {}",
+                kv("id", id));
+        User user = userRepo.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(User.class, id));
+        deleteFile(user.getResume(), resumeFolder);
+        String fileName = fileServiceImpl.uploadPdf(file, resumeFolder);
+        user.setResume(fileName);
+        userRepo.save(user);
+        log.info("updateResume to User completed successfully with {}",
+                kv("id", user));
+        return fileName;
+    }
+
 }

@@ -22,7 +22,7 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 
 @RestControllerAdvice
 @Slf4j
-@PropertySource("classpath:messages.properties")
+@PropertySource(value = "classpath:messages.properties", encoding = "UTF-8")
 public class ErrorHandler extends ResponseEntityExceptionHandler {
     @Value("${error.notFound}")
     private String notFound;

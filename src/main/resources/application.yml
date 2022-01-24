@@ -15,6 +15,7 @@ file:
   upload:
     acceptableVideoExtensions: mp4,mov,avi,wmv
     acceptableImageExtensions: jpg,png,jpeg
+    acceptablePdfExtensions: pdf
 
 minio:
   url: http://127.0.0.1:9000/
@@ -23,6 +24,7 @@ minio:
   secret-key: test1234
   image-folder: profpic/
   video-folder: video/
+  resume-folder: resume/
 application:
   swagger:
     title: MinIo Photo API

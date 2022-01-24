@@ -35,4 +35,9 @@ public interface UserService {
 
     void deleteUserVideo(Long id);
 
+    String uploadContractByPin(String dummyPin);
+
+    String uploadResume(MultipartFile file, Long id);
+
+    String updateResume(MultipartFile file, Long id);
 }
