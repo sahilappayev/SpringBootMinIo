@@ -14,11 +14,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -118,20 +122,36 @@ public class UserServiceImpl implements UserService {
     /**
      * FILE METHODS
      */
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
     @Override
     @Transactional
     public String uploadImage(MultipartFile file, Long id) {
         log.info("uploadImage to User started with, {}",
                 kv("partnerId", id));
-        User user = userRepo.findById(id).orElseThrow(
-                () -> new EntityNotFoundException(User.class, id));
-        if (user.getPhoto() == null) {
-            String fileName = fileServiceImpl.uploadImage(file, imageFolder, true);
-            user.setPhoto(fileName);
-            userRepo.save(user);
-            log.info("uploadImage to User completed successfully with {}",
-                    kv("partnerId", id));
-            return fileName;
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
+//        definition.setIsolationLevel(TransactionDefinition.PROPAGATION_REQUIRED);
+        definition.setTimeout(3);
+        TransactionStatus status = transactionManager.getTransaction(definition);
+        String fileName = "";
+        try {
+            User user = userRepo.findById(id).orElseThrow(
+                    () -> new EntityNotFoundException(User.class, id));
+            if (user.getPhoto() == null) {
+                fileName = fileServiceImpl.uploadImage(file, imageFolder, true);
+                user.setPhoto(fileName);
+                userRepo.save(user);
+//                if (!fileName.equals("")) throw new RuntimeException("AHAAAAAAAAAAAAAAAAAAA");
+                transactionManager.commit(status);
+                log.info("uploadImage to User completed successfully with {}",
+                        kv("partnerId", id));
+                return fileName;
+            }
+        }catch (Exception e){
+            log.info("Filename:  ", fileName);
+            fileServiceImpl.deleteFile(fileName,imageFolder);
+            transactionManager.rollback(status);
         }
         throw new FileCantUploadException(file.getOriginalFilename());
     }
