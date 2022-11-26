@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("users")
@@ -173,6 +174,13 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public byte[] getResume(@PathVariable("fileName") String fileName) {
         return userService.getFile(fileName, resumeFolder);
+    }
+
+    @PostMapping("/{id}/upload-photos")
+    public Map<String, String> uploadPhotos(@PathVariable Long id,
+                                            @RequestParam String[] names,
+                                            @RequestParam MultipartFile[] files) {
+        return userService.uploadPhotos(id, names, files);
     }
 
 }

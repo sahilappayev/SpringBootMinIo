@@ -4,12 +4,15 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -27,5 +30,8 @@ public class User implements Serializable {
     private String photo;
     private String video;
     private String resume;
+
+    @ElementCollection
+    private Map<String, String> photos = new HashMap<>();
 
 }

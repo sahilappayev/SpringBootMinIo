@@ -34,6 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 import static com.java.sahil.minio.client.DummyClient.getBase64Contract;
 import static com.java.sahil.minio.client.DummyClient.getBase64Signature;
@@ -56,6 +57,7 @@ public class UserServiceImpl implements UserService {
     private String resumeFolder;
 
     @Override
+    @Transactional
     public UserResponseDto create(UserRequestDto userRequestDto) {
         log.info("create User started with: {}", kv("userRequestDto", userRequestDto));
         User user = userRepo.save(userMapper.toUserEntity(userRequestDto));
@@ -65,6 +67,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserResponseDto update(UserRequestDto userRequestDto, Long id) {
         log.info("update User started with: {}, {}", kv("id", id),
                 kv("userRequestDto", userRequestDto));
@@ -81,6 +84,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserResponseDto findById(Long id) {
         log.info("findById User started with: {}", kv("id", id));
         User user = userRepo.findById(id).orElseThrow(() -> {
@@ -92,6 +96,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PageableResponseDto<List<UserResponseDto>> findAll(int page, int size) {
         log.info("findAll User started");
         Pageable pageable = PageRequest.of(page, size);
@@ -102,6 +107,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserResponseDto delete(Long id) {
         log.info("delete User started with: {}", kv("id", id));
         User user = userRepo.findById(id).orElseThrow(() -> {
@@ -125,8 +131,8 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
     @Override
-    @Transactional
     public String uploadImage(MultipartFile file, Long id) {
         log.info("uploadImage to User started with, {}",
                 kv("partnerId", id));
@@ -136,8 +142,7 @@ public class UserServiceImpl implements UserService {
         TransactionStatus status = transactionManager.getTransaction(definition);
         String fileName = "";
         try {
-            User user = userRepo.findById(id).orElseThrow(
-                    () -> new EntityNotFoundException(User.class, id));
+            User user = getUser(id);
             if (user.getPhoto() == null) {
                 fileName = fileServiceImpl.uploadImage(file, imageFolder, true);
                 user.setPhoto(fileName);
@@ -148,9 +153,9 @@ public class UserServiceImpl implements UserService {
                         kv("partnerId", id));
                 return fileName;
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             log.info("Filename:  ", fileName);
-            fileServiceImpl.deleteFile(fileName,imageFolder);
+            fileServiceImpl.deleteFile(fileName, imageFolder);
             transactionManager.rollback(status);
         }
         throw new FileCantUploadException(file.getOriginalFilename());
@@ -161,8 +166,7 @@ public class UserServiceImpl implements UserService {
     public String updateImage(MultipartFile file, Long id) {
         log.info("updateImage to User started with, {}",
                 kv("partnerId", id));
-        User user = userRepo.findById(id).orElseThrow(
-                () -> new EntityNotFoundException(User.class, id));
+        User user = getUser(id);
         deleteFile(user.getPhoto(), imageFolder);
         String fileName = fileServiceImpl.uploadImage(file, imageFolder, true);
         user.setPhoto(fileName);
@@ -173,10 +177,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUserImage(Long id) {
         log.info("deleteUserImage started from User with {}", kv("id", id));
-        User user = userRepo.findById(id).orElseThrow(
-                () -> new EntityNotFoundException(User.class, id));
+        User user = getUser(id);
         if (user.getPhoto() != null) {
             fileServiceImpl.deleteFile(user.getPhoto(), imageFolder);
             user.setPhoto(null);
@@ -186,7 +190,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
     public void deleteFile(String fileName, String folder) {
         log.info("deleteFile started from User with {}", kv("fileName", fileName));
         fileServiceImpl.deleteFile(fileName, folder);
@@ -200,11 +203,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public String uploadVideo(MultipartFile file, Long id) {
         log.info("uploadVideo to User started with, {}",
                 kv("partnerId", id));
-        User user = userRepo.findById(id).orElseThrow(
-                () -> new EntityNotFoundException(User.class, id));
+        User user = getUser(id);
         if (user.getVideo() == null) {
             String fileName = fileServiceImpl.uploadVideo(file, videoFolder);
             user.setVideo(fileName);
@@ -217,11 +220,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public String updateVideo(MultipartFile file, Long id) {
         log.info("updateVideo to User started with, {}",
                 kv("partnerId", id));
-        User user = userRepo.findById(id).orElseThrow(
-                () -> new EntityNotFoundException(User.class, id));
+        User user = getUser(id);
         deleteFile(user.getVideo(), videoFolder);
         String fileName = fileServiceImpl.uploadVideo(file, videoFolder);
         user.setVideo(fileName);
@@ -232,10 +235,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUserVideo(Long id) {
         log.info("deleteUserVideo started from User with {}", kv("id", id));
-        User user = userRepo.findById(id).orElseThrow(
-                () -> new EntityNotFoundException(User.class, id));
+        User user = getUser(id);
         if (user.getPhoto() != null) {
             fileServiceImpl.deleteFile(user.getVideo(), videoFolder);
             user.setVideo(null);
@@ -246,8 +249,9 @@ public class UserServiceImpl implements UserService {
 
     @SneakyThrows
     @Override
+    @Transactional
     public String uploadContractByPin(String dummyPin) {
-        User user = userRepo.findById(1L).get();
+        User user = getUser(1L);
         BufferedImage contract = base64ToBufferedImage(getBase64Contract());
         BufferedImage signature = base64ToBufferedImage(getBase64Signature());
         signature = fileUtil.resizeImage(signature, 70, 25);
@@ -283,11 +287,11 @@ public class UserServiceImpl implements UserService {
         return ImageIO.read(new ByteArrayInputStream(bytes));
     }
 
+    @Transactional
     public String uploadResume(MultipartFile file, Long id) {
         log.info("uploadResume to User started with, {}",
                 kv("id", id));
-        User user = userRepo.findById(id).orElseThrow(
-                () -> new EntityNotFoundException(User.class, id));
+        User user = getUser(id);
         if (user.getVideo() == null) {
             String fileName = fileServiceImpl.uploadPdf(file, resumeFolder);
             user.setResume(fileName);
@@ -300,11 +304,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public String updateResume(MultipartFile file, Long id) {
         log.info("updateResume to User started with, {}",
                 kv("id", id));
-        User user = userRepo.findById(id).orElseThrow(
-                () -> new EntityNotFoundException(User.class, id));
+        User user = getUser(id);
         deleteFile(user.getResume(), resumeFolder);
         String fileName = fileServiceImpl.uploadPdf(file, resumeFolder);
         user.setResume(fileName);
@@ -312,6 +316,24 @@ public class UserServiceImpl implements UserService {
         log.info("updateResume to User completed successfully with {}",
                 kv("id", user));
         return fileName;
+    }
+
+    private User getUser(Long id) {
+        return userRepo.findById(id).orElseThrow(
+                () -> new EntityNotFoundException(User.class, id));
+    }
+
+    @Override
+    @Transactional
+    public Map<String, String> uploadPhotos(Long id, String[] names, MultipartFile[] files) {
+        User user = getUser(id);
+        int i = 0;
+        for (MultipartFile file : files) {
+            String uploadImageName = fileServiceImpl.uploadImage(file, imageFolder, false);
+            user.getPhotos().put(names[i], uploadImageName);
+            i++;
+        }
+        return user.getPhotos();
     }
 
 }

@@ -6,6 +6,7 @@ import com.java.sahil.minio.dto.UserResponseDto;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 public interface UserService {
 
@@ -40,4 +41,6 @@ public interface UserService {
     String uploadResume(MultipartFile file, Long id);
 
     String updateResume(MultipartFile file, Long id);
+
+    Map<String, String> uploadPhotos(Long id, String[] names, MultipartFile[] files);
 }

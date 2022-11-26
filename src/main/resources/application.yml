@@ -5,6 +5,7 @@ spring:
   jpa:
     open-in-view: false
     defer-datasource-initialization: true
+    show-sql: true
   servlet:
     multipart:
       enabled: true
