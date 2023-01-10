@@ -9,16 +9,14 @@ services:
       MINIO_ACCESS_KEY: test
       MINIO_SECRET_KEY: test1234
     command: server --console-address :9001 /data
-  create_buckets:
+  createbuckets:
     image: minio/mc
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c '
-      sleep 5;
-      /usr/bin/mc config host add s3 http://minio:9001 test test1234 --api S3v4;
-      /usr/bin/mc mb user;
-      [[ ! -z "`/usr/bin/mc ls s3 | grep user`" ]] || /usr/bin/mc mb s3/user;
-      /usr/bin/mc policy download s3/user;
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 test test1234;
+      /usr/bin/mc mb myminio/user;
+      /usr/bin/mc policy set public myminio/user;
       exit 0;
-      '
+      "

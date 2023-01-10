@@ -4,5 +4,5 @@
 
 * Before starting app you have to run Gradle Docker composeUp stage to create MinIo server which
 you can access using following url: http://127.0.0.1:9000/ (access key: test, secret key: test1234)
-* Create "user" bucket
+* Create "user" bucket if it not exists
   
