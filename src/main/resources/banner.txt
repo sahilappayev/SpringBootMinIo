@@ -6,4 +6,4 @@
  |____/| .__/|_|  |_|_| |_|\__, | |____/ \___/ \___/ \__|         |_|  |_|_|_| |_|___\___/
        |_|                 |___/
 
-${AnsiColor.BRIGHT_RED}:: Kapital Bank  :: Running Spring Boot ${spring-boot.version} ::
+${AnsiColor.BRIGHT_RED}:: Running Spring Boot ${spring-boot.version} ::
